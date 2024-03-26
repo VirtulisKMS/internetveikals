@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+
+{% block page_title %}
+Internetveikals
+{% endblock %}
+
+{% block head_inners %}
+
+{% endblock %}
+
+{% block main_content%}
+
+<p>
+    <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+      Jauna kategorija
+    </button>
+</p>
+<div class="collapse" id="collapseExample">
+    <form action=""  method="POST">
+        <Label>Jauna kategorija:</Label>
+        <input type="text" class="form-control" placeholder="Kategorija" name="kategorija" id="kategorija">
+        <input type="submit" class="btn btn-primary">
+    </form>
+</div>
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <th>Kategorija</th>
+        </thead>
+        <tbody>
+            {% for category in manas_kategorijas %}
+            <tr>
+                <td>{{ category[1] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock%}

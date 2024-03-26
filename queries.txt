@@ -1,0 +1,79 @@
+CREATE TABLE `users` (
+  `user_id` varchar(36) COLLATE utf8mb4_general_ci NOT NULL,
+  `username` varchar(45) COLLATE utf8mb4_general_ci NOT NULL,
+  `password` varchar(2500) COLLATE utf8mb4_general_ci NOT NULL,
+  `first_name` varchar(45) COLLATE utf8mb4_general_ci NOT NULL,
+  `last_name` varchar(45) COLLATE utf8mb4_general_ci NOT NULL,
+  `e_mail` varchar(45) COLLATE utf8mb4_general_ci NOT NULL,
+  `phone` varchar(8) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `adress` varchar(45) COLLATE utf8mb4_general_ci NOT NULL,
+  `admin` int NOT NULL,
+  PRIMARY KEY (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+CREATE TABLE `products` (
+  `product_id` varchar(36) COLLATE utf8mb4_general_ci NOT NULL,
+  `prod_name` varchar(75) COLLATE utf8mb4_general_ci NOT NULL,
+  `categ_id` varchar(36) COLLATE utf8mb4_general_ci NOT NULL,
+  `cost` decimal(10,0) NOT NULL,
+  `size` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `image_file` varchar(200) COLLATE utf8mb4_general_ci NOT NULL,
+  `description` varchar(200) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  PRIMARY KEY (`product_id`),
+  KEY `FK_productcateg` (`categ_id`),
+  CONSTRAINT `FK_productcateg` FOREIGN KEY (`categ_id`) REFERENCES `categories` (`categ_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+CREATE TABLE `orders` (
+  `order_id` varchar(36) COLLATE utf8mb4_general_ci NOT NULL,
+  `user_id` varchar(36) COLLATE utf8mb4_general_ci NOT NULL,
+  `order_date` date NOT NULL,
+  `delivery_id` varchar(36) COLLATE utf8mb4_general_ci NOT NULL,
+  PRIMARY KEY (`order_id`),
+  KEY `FK_ordersdelivery` (`delivery_id`),
+  KEY `FK_ordersuser` (`user_id`),
+  CONSTRAINT `FK_ordersdelivery` FOREIGN KEY (`delivery_id`) REFERENCES `delivery` (`delivery_id`),
+  CONSTRAINT `FK_ordersuser` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+CREATE TABLE `ordered_items` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `product_id` varchar(36) COLLATE utf8mb4_general_ci NOT NULL,
+  `order_id` varchar(36) COLLATE utf8mb4_general_ci NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FK_orederedorder` (`order_id`),
+  KEY `FK_orederedproduct` (`product_id`),
+  CONSTRAINT `FK_orederedorder` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`),
+  CONSTRAINT `FK_orederedproduct` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+CREATE TABLE `delivery` (
+  `delivery_id` varchar(36) COLLATE utf8mb4_general_ci NOT NULL,
+  `price` decimal(10,0) NOT NULL,
+  PRIMARY KEY (`delivery_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+CREATE TABLE `categories` (
+  `categ_id` varchar(36) COLLATE utf8mb4_general_ci NOT NULL,
+  `kategorija` varchar(45) COLLATE utf8mb4_general_ci NOT NULL,
+  PRIMARY KEY (`categ_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+CREATE TABLE `cart_items` (
+  `id` int NOT NULL,
+  `product_id` varchar(36) COLLATE utf8mb4_general_ci NOT NULL,
+  `cart_id` varchar(36) COLLATE utf8mb4_general_ci NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FK_cartedproduct` (`product_id`),
+  KEY `FK_cartedcart` (`cart_id`),
+  CONSTRAINT `FK_cartedcart` FOREIGN KEY (`cart_id`) REFERENCES `cart` (`cart_id`),
+  CONSTRAINT `FK_cartedproduct` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+CREATE TABLE `cart` (
+  `cart_id` varchar(36) COLLATE utf8mb4_general_ci NOT NULL,
+  `user_id` varchar(36) COLLATE utf8mb4_general_ci NOT NULL,
+  PRIMARY KEY (`cart_id`),
+  KEY `FK_cartuser` (`user_id`),
+  CONSTRAINT `FK_cartuser` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci

@@ -1,0 +1,30 @@
+.nav > .nav-item {
+    border: none;
+    border-radius: 0.25rem;
+    margin: 10px 10px 0px 10px;
+}
+
+.navbar > nav-item > nav-link {
+    padding: 6px;
+}
+
+.nav-item > a {
+    color: black;
+}
+
+.navbar {
+    border-bottom: 1px solid rgba(0,0,0,.125);
+}
+
+button.nav-link {
+    background-color: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+}
+
+@media only screen and (min-width: 992px) {
+    .nav > .nav-item.full-width {
+        width: 100%;
+    }
+}
