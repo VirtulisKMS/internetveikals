@@ -19,7 +19,7 @@ app = Flask(__name__)
 app.config.from_object(Config)
 #mysql = MySQL(app)
 #mysql.init_app(app)
-cnx = mysql.connector.connect(user='root', password='V13laukums@!',
+cnx = mysql.connector.connect(user='root', password='#Password1',
  host='localhost',
  database='mydatabase')
 
