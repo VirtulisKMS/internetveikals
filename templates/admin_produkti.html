@@ -1,0 +1,31 @@
+{% extends "layout.html" %} 
+{% block page_title %} internetveikals {% endblock %} 
+{%block head_inners %}{% endblock %} 
+{% block main_content%}
+<form id="product-form" action="/admin_products" method="POST" enctype="multipart/form-data">
+    <input class="form-control" required type="text" name="prod_name" placeholder="Nosaukums"></input>
+    <select name="kategorija" id="kategorija">
+        {% for kategorija in kategorijas %}
+        <option value="{{ kategorija[0] }}">{{ kategorija[1] }}</option>
+        {% endfor %}
+    </select>
+    <input class="form-control" required type="text" name="cost" placeholder="Cena"></input>
+    <input class="form-control" required type="text" name="size" placeholder="Izmērs"></input>
+    <input class="form-control" type="file" name="image" accept="image/*">
+    <input class="form-control" type="text" name="description" placeholder="Apraksts"></input>
+    <input style="width: 100%;" class="btn btn-primary" type="submit" value="Register"></input>
+</form>
+{% for product in produkts %}
+    <div class="card">
+        <img src={{product[4]}} class="card-img-top" alt="somehow make default image">
+        <div class="card-body">
+        <h5 class="card-title">{{product[0]}}</h5>
+        <p class="card-text">Kategorija : {{product[1]}}</p>
+        <p class="card-text">Izmērs : {{product[3]}}</p>
+        <p class="card-text">Cena : {{product[2]}}</p>
+        <p class="card-text">Apraksts : {{product[5]}}</p>
+        <a href="#" class="btn btn-primary">Ielikt grozā</a>
+        </div>
+    </div>
+{% endfor %}
+{% endblock%}
