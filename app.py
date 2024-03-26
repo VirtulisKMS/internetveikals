@@ -1,4 +1,3 @@
-
 from flask import (
     Flask,
     request,
@@ -20,13 +19,54 @@ app = Flask(__name__)
 app.config.from_object(Config)
 #mysql = MySQL(app)
 #mysql.init_app(app)
-cnx = mysql.connector.connect(user='root', password='#Password1',
+cnx = mysql.connector.connect(user='root', password='V13laukums@!',
  host='localhost',
- database='internetveikals')
+ database='mydatabase')
 
 
 
 # routes
+@app.route('/admin_products', methods=['GET', 'POST'])
+def admin_products():
+    if request.method == "POST":
+        ...
+    else:
+        try:
+            cur = cnx.cursor()
+            query_string = """SELECT products.prod_name, categories.kategorija, products.cost, products.size, products.image_file, products.description 
+                            FROM products 
+                            JOIN categories ON products.categ_id = categories.categ_id
+                            """
+            cur.execute(query_string)
+            produkts = cur.fetchall()
+            query_string = """SELECT * from categories"""
+            cur.execute(query_string)
+            kategorijas = cur.fetchall()
+            cur.close()
+            return render_template("admin_produkti.html", produkts=produkts, kategorijas=kategorijas)
+            
+        except Exception as e:
+            flash("Database error: " + str(e), "error")
+
+
+@app.route('/products', methods=['GET'])
+def produkti():
+    try:
+        cur = cnx.cursor()
+        query_string = """SELECT products.prod_name, categories.kategorija, products.cost, products.size, products.image_file, products.description 
+                        FROM products 
+                        JOIN categories ON products.categ_id = categories.categ_id
+                        """
+        cur.execute(query_string)
+        produkts = cur.fetchall()
+        cur.close()
+        print(produkts)
+        return render_template("produkti.html", produkts=produkts)
+        
+    except Exception as e:
+        flash("Database error: " + str(e), "error")
+            
+
 #categories
 @app.route('/categ', methods=['POST', 'GET'])
 def categ():
@@ -36,7 +76,7 @@ def categ():
             print("Received kategorija value:", kategorija)
             categ_id = str(uuid4())
             cur = cnx.cursor()
-            add_category = ("INSERT INTO internetveikals.categories "
+            add_category = ("INSERT INTO mydatabase.categories "
                 "(categ_id, kategorija) "
                 "VALUES (%s,%s)")
             val = (categ_id, kategorija)
@@ -51,10 +91,11 @@ def categ():
     else:
         try:
             cur = cnx.cursor()
-            query_string = "SELECT * FROM internetveikals.categories"
+            query_string = "SELECT * FROM categories"
             cur.execute(query_string)
             kategorijas = cur.fetchall()
             cur.close()
+            print(kategorijas)
             return render_template("categ.html", manas_kategorijas=kategorijas)
             
         except Exception as e:
@@ -156,5 +197,6 @@ def view_cart():
 
 if app.config["FLASK_ENV"] == "development":
     if __name__ == "__main__":
-        app.run(debug=True, host='localhost', port=5000)
+        app.run(debug=True)
+
 cnx.close()

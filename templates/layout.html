@@ -66,7 +66,11 @@
                     <!-- Nav links to the left -->
                     <ul class="navbar-nav me-auto mt-2">
                         <li class="nav-item"><a class="nav-link" href="/">Sākums</a></li>
+                        {% if session["user_role"] == 1 %}
+                        <li class="nav-item"><a class="nav-link" href="/admin_products">Produkti</a></li>
+                        {% else %}
                         <li class="nav-item"><a class="nav-link" href="/products">Produkti</a></li>
+                        {% endif %}
                         <!--<li class="nav-item"><a class="nav-link" href="/categ">Kategorijas</a></li>-->
                         <!--<li class="nav-item">
                         <div id="search-box" class="input-group">
