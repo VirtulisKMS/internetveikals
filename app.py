@@ -13,13 +13,15 @@ import mysql.connector
 from werkzeug.security import check_password_hash, generate_password_hash
 #from flask_mysql_connector import MySQL
 #import mysql.connector
+import os
+from werkzeug.utils import secure_filename
 
 
 app = Flask(__name__)
 app.config.from_object(Config)
 #mysql = MySQL(app)
 #mysql.init_app(app)
-cnx = mysql.connector.connect(user='root', password='#Password1',
+cnx = mysql.connector.connect(user='root', password='V13laukums@!',
  host='localhost',
  database='mydatabase')
 
@@ -29,7 +31,32 @@ cnx = mysql.connector.connect(user='root', password='#Password1',
 @app.route('/admin_products', methods=['GET', 'POST'])
 def admin_products():
     if request.method == "POST":
-        ...
+        name = request.form.get('prod_name')
+        kategorija = request.form.get('kategorija')
+        cost = request.form.get('cost')
+        size = request.form.get('size')
+        image_file = request.files['image']
+        description = request.form.get('description')
+
+        # Save the image file to the 'images' folder
+        if image_file:
+            image_filename = secure_filename(image_file.filename)
+            image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
+            image_file.save(image_path)
+
+        try:
+            cur = cnx.cursor()
+            query_string = """INSERT INTO products (product_id, prod_name, categ_id, cost, size, image_file, description) VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+            val = (str(uuid4()), name, kategorija, cost, size, image_path, description)
+            cur.execute(query_string, val)
+            cnx.commit()
+            cur.close()
+            flash("Product added successfully", "success")
+            return redirect("/admin_products")
+        except Exception as e:
+            flash("Database error: " + str(e), "error")
+            return redirect("/admin_products")
+
     else:
         try:
             cur = cnx.cursor()

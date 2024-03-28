@@ -12,6 +12,7 @@ class Config:
     FLASK_ENV = environ.get("FLASK_ENV")
     STATIC_FOLDER = 'static'
     STATIC_URL_PATH = '/static'
+    UPLOAD_FOLDER = 'static/images'
 
     #MYSQL_DATABASE_HOST = environ.get('MYSQL_DATABASE_HOST')
     #MYSQL_DATABASE_USER = environ.get('MYSQL_DATABASE_USER')
