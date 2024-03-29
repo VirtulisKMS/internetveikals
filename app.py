@@ -26,9 +26,49 @@ cnx = mysql.connector.connect(user='root', password='V13laukums@!',
  host='localhost',
  database='mydatabase')
 
-
-
 # routes
+@app.route('/delete/<product_id>', methods=['GET'])
+@login_required
+def delete_product(product_id):
+    cur = cnx.cursor()
+    user_id = session.get('user_id')
+    try:
+        query_string = '''SELECT cart_id FROM cart WHERE user_id = %s'''
+        cur.execute(query_string, (user_id,))
+        cart_id = cur.fetchone()[0]  # Assuming cart_id is the first element of the tuple
+        cnx.commit()
+        cur.close()
+        cur = cnx.cursor()
+        query_string = '''DELETE FROM cart_items WHERE product_id = %s and cart_id = %s'''
+        cur.execute(query_string, (product_id, cart_id))
+        cnx.commit()
+        cur.close()
+        flash("Product deleted successfully", "success")
+        return redirect("/products")
+    except Exception as e:
+        flash("Database error: " + str(e), "error")
+        return redirect("/products")
+
+@app.route('/add_to_cart/<product_id>', methods=['GET'])
+@login_required
+def add_to_cart(product_id):
+    cur = cnx.cursor()
+    user_id = session.get('user_id')
+    try:
+        query_string = '''SELECT cart_id FROM cart WHERE user_id = %s'''
+        cur.execute(query_string, (user_id,))
+        cart_id = cur.fetchone()[0]  # Assuming cart_id is the first element of the tuple
+        query_string = '''INSERT INTO cart_items (id, product_id, cart_id) VALUES (%s, %s, %s)'''
+        val1 = (str(uuid4()), product_id, cart_id)
+        cur.execute(query_string, val1)
+        cnx.commit()
+        cur.close()
+        flash("Product added to cart successfully", "success")
+        return redirect("/products")
+    except Exception as e:
+        flash("Database error: " + str(e), "error")
+        return redirect("/products")
+
 @app.route('/admin_products', methods=['GET', 'POST'])
 @admin_login_required
 def admin_products():
@@ -84,7 +124,7 @@ def admin_products():
 def produkti():
     try:
         cur = cnx.cursor()
-        query_string = """SELECT products.prod_name, categories.kategorija, products.cost, products.size, products.image_file, products.description 
+        query_string = """SELECT products.prod_name, categories.kategorija, products.cost, products.size, products.image_file, products.description, products.product_id
                         FROM products 
                         JOIN categories ON products.categ_id = categories.categ_id
                         """
@@ -97,7 +137,6 @@ def produkti():
     except Exception as e:
         flash("Database error: " + str(e), "error")
             
-
 #categories
 @app.route('/categ', methods=['POST', 'GET'])
 @admin_login_required
@@ -179,8 +218,9 @@ def register():
         e_mail = request.form["e-mail"]
         phone = request.form["phone"]
         address = request.form["address"]
+        user_id = str(uuid4())
         newUserSql = ''' INSERT INTO users (user_id, username, password, first_name, last_name, e_mail, phone, adress, admin) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s) '''
-        val = (str(uuid4()),
+        val1 = (user_id,
                 username, 
                 generate_password_hash(password), 
                 first_name, 
@@ -189,9 +229,13 @@ def register():
                 phone,
                 address,
                 int(0))
+        UserCartSql = ''' INSERT INTO cart (cart_id, user_id) VALUES (%s, %s)'''
+        val2 = (str(uuid4()), user_id)
         try:
             cur = cnx.cursor()
-            cur.execute(newUserSql, val)
+            cur.execute(newUserSql, val1)
+            cnx.commit()
+            cur.execute(UserCartSql, val2)
             cnx.commit()
             cur.close()
             flash("Account created successfully!")
@@ -222,8 +266,25 @@ def logout():
 @app.route("/view_cart", methods=['POST', 'GET'])
 @login_required
 def view_cart():
-    return "hello world"
-
+    if request.method == "POST":
+        pass
+    else:
+        try:
+            cur = cnx.cursor()
+            query_string = """SELECT products.product_id, products.prod_name, categories.kategorija, products.cost, products.size, products.image_file, products.description 
+            FROM products
+            JOIN categories ON products.categ_id = categories.categ_id
+            WHERE product_id = (
+            SELECT product_id FROM cart where user_id = %s)"""
+            cur.execute(query_string, (session["user_id"], ))
+            produkts = cur.fetchall()
+            cur.close()
+            print(produkts)
+            return render_template("view_cart.html", produkts=produkts)
+        except Exception as e:
+            flash("Database error: " + str(e), "error")
+    
+        return render_template("view_cart.html")
 
 if app.config["FLASK_ENV"] == "development":
     if __name__ == "__main__":
