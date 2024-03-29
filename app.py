@@ -15,6 +15,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 #import mysql.connector
 import os
 from werkzeug.utils import secure_filename
+from verification import user_session, logout_user, login_required, admin_login_required
 
 
 app = Flask(__name__)
@@ -29,6 +30,7 @@ cnx = mysql.connector.connect(user='root', password='V13laukums@!',
 
 # routes
 @app.route('/admin_products', methods=['GET', 'POST'])
+@admin_login_required
 def admin_products():
     if request.method == "POST":
         name = request.form.get('prod_name')
@@ -43,6 +45,8 @@ def admin_products():
             image_filename = secure_filename(image_file.filename)
             image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
             image_file.save(image_path)
+        else:
+            image_path = 'static/images/default_image.png'
 
         try:
             cur = cnx.cursor()
@@ -96,6 +100,7 @@ def produkti():
 
 #categories
 @app.route('/categ', methods=['POST', 'GET'])
+@admin_login_required
 def categ():
     if request.method == "POST":
         try:
@@ -145,9 +150,7 @@ def login():
             user = cur.fetchall()
             if len(user) > 0:
                 if check_password_hash(user[0][1], password):
-                    session["user_id"] = user[0][0]
-                    session["user_name"] = username
-                    session["user_role"] = user[0][2]
+                    user_session(user, username)
                     flash("You are logged in")
                 else:
                     flash("Wrong password")
@@ -201,6 +204,7 @@ def register():
     
 #Admin
 @app.route("/admin", methods=['POST', 'GET'])
+@admin_login_required
 def admin():
     if request.method=="POST":
         pass
@@ -210,16 +214,15 @@ def admin():
 #Logout
 @app.route("/logout")
 def logout():
-    del(session["user_id"])
-    del(session["user_name"])
-    del(session["user_role"])
+    logout_user()
     flash("You are logged out")
     return redirect("/home")
 
 #Cart
 @app.route("/view_cart", methods=['POST', 'GET'])
+@login_required
 def view_cart():
-    pass
+    return "hello world"
 
 
 if app.config["FLASK_ENV"] == "development":

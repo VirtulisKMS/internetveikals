@@ -4,7 +4,7 @@
 {% block main_content%}
 {% for product in produkts %}
     <div class="card">
-        <img src={{product[4]}} class="card-img-top" alt="somehow make default image">
+        <img style="width: 150px;" src={{product[4]}} class="card-img-top" alt="somehow make default image">
         <div class="card-body">
         <h5 class="card-title">{{product[0]}}</h5>
         <p class="card-text">Kategorija : {{product[1]}}</p>
