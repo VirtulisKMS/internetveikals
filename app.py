@@ -13,23 +13,94 @@ import mysql.connector
 from werkzeug.security import check_password_hash, generate_password_hash
 #from flask_mysql_connector import MySQL
 #import mysql.connector
+import os
+from werkzeug.utils import secure_filename
+from verification import user_session, logout_user, login_required, admin_login_required
 
 
 app = Flask(__name__)
 app.config.from_object(Config)
 #mysql = MySQL(app)
 #mysql.init_app(app)
-cnx = mysql.connector.connect(user='root', password='#Password1',
+cnx = mysql.connector.connect(user='root', password='V13laukums@!',
  host='localhost',
  database='mydatabase')
 
-
-
 # routes
+@app.route('/delete/<product_id>', methods=['GET'])
+@login_required
+def delete_product(product_id):
+    cur = cnx.cursor()
+    user_id = session.get('user_id')
+    try:
+        query_string = '''SELECT cart_id FROM cart WHERE user_id = %s'''
+        cur.execute(query_string, (user_id,))
+        cart_id = cur.fetchone()[0]  # Assuming cart_id is the first element of the tuple
+        cnx.commit()
+        cur.close()
+        cur = cnx.cursor()
+        query_string = '''DELETE FROM cart_items WHERE product_id = %s and cart_id = %s'''
+        cur.execute(query_string, (product_id, cart_id))
+        cnx.commit()
+        cur.close()
+        flash("Product deleted successfully", "success")
+        return redirect("/products")
+    except Exception as e:
+        flash("Database error: " + str(e), "error")
+        return redirect("/products")
+
+@app.route('/add_to_cart/<product_id>', methods=['GET'])
+@login_required
+def add_to_cart(product_id):
+    cur = cnx.cursor()
+    user_id = session.get('user_id')
+    try:
+        query_string = '''SELECT cart_id FROM cart WHERE user_id = %s'''
+        cur.execute(query_string, (user_id,))
+        cart_id = cur.fetchone()[0]  # Assuming cart_id is the first element of the tuple
+        query_string = '''INSERT INTO cart_items (id, product_id, cart_id) VALUES (%s, %s, %s)'''
+        val1 = (str(uuid4()), product_id, cart_id)
+        cur.execute(query_string, val1)
+        cnx.commit()
+        cur.close()
+        flash("Product added to cart successfully", "success")
+        return redirect("/products")
+    except Exception as e:
+        flash("Database error: " + str(e), "error")
+        return redirect("/products")
+
 @app.route('/admin_products', methods=['GET', 'POST'])
+@admin_login_required
 def admin_products():
     if request.method == "POST":
-        ...
+        name = request.form.get('prod_name')
+        kategorija = request.form.get('kategorija')
+        cost = request.form.get('cost')
+        size = request.form.get('size')
+        image_file = request.files['image']
+        description = request.form.get('description')
+
+        # Save the image file to the 'images' folder
+        if image_file:
+            image_filename = secure_filename(image_file.filename)
+            image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
+            image_file.save(image_path)
+        else:
+            image_path = 'static/images/default_image.png'
+
+        try:
+            cur = cnx.cursor()
+            query_string = """INSERT INTO products (product_id, prod_name, categ_id, cost, size, image_file, description) VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+            val = (str(uuid4()), name, kategorija, cost, size, image_path, description)
+            cur.execute(query_string, val)
+            cnx.commit()
+            cur.close()
+            flash("Product added successfully", "success")
+            return redirect("/admin_products")
+        except Exception as e:
+            flash("Database error: " + str(e), "error")
+            return redirect("/admin_products")
+
     else:
         try:
             cur = cnx.cursor()
@@ -53,7 +124,7 @@ def admin_products():
 def produkti():
     try:
         cur = cnx.cursor()
-        query_string = """SELECT products.prod_name, categories.kategorija, products.cost, products.size, products.image_file, products.description 
+        query_string = """SELECT products.prod_name, categories.kategorija, products.cost, products.size, products.image_file, products.description, products.product_id
                         FROM products 
                         JOIN categories ON products.categ_id = categories.categ_id
                         """
@@ -66,9 +137,9 @@ def produkti():
     except Exception as e:
         flash("Database error: " + str(e), "error")
             
-
 #categories
 @app.route('/categ', methods=['POST', 'GET'])
+@admin_login_required
 def categ():
     if request.method == "POST":
         try:
@@ -118,9 +189,7 @@ def login():
             user = cur.fetchall()
             if len(user) > 0:
                 if check_password_hash(user[0][1], password):
-                    session["user_id"] = user[0][0]
-                    session["user_name"] = username
-                    session["user_role"] = user[0][2]
+                    user_session(user, username)
                     flash("You are logged in")
                 else:
                     flash("Wrong password")
@@ -149,8 +218,9 @@ def register():
         e_mail = request.form["e-mail"]
         phone = request.form["phone"]
         address = request.form["address"]
+        user_id = str(uuid4())
         newUserSql = ''' INSERT INTO users (user_id, username, password, first_name, last_name, e_mail, phone, adress, admin) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s) '''
-        val = (str(uuid4()),
+        val1 = (user_id,
                 username, 
                 generate_password_hash(password), 
                 first_name, 
@@ -159,9 +229,13 @@ def register():
                 phone,
                 address,
                 int(0))
+        UserCartSql = ''' INSERT INTO cart (cart_id, user_id) VALUES (%s, %s)'''
+        val2 = (str(uuid4()), user_id)
         try:
             cur = cnx.cursor()
-            cur.execute(newUserSql, val)
+            cur.execute(newUserSql, val1)
+            cnx.commit()
+            cur.execute(UserCartSql, val2)
             cnx.commit()
             cur.close()
             flash("Account created successfully!")
@@ -174,6 +248,7 @@ def register():
     
 #Admin
 @app.route("/admin", methods=['POST', 'GET'])
+@admin_login_required
 def admin():
     if request.method=="POST":
         pass
@@ -183,17 +258,33 @@ def admin():
 #Logout
 @app.route("/logout")
 def logout():
-    del(session["user_id"])
-    del(session["user_name"])
-    del(session["user_role"])
+    logout_user()
     flash("You are logged out")
     return redirect("/home")
 
 #Cart
 @app.route("/view_cart", methods=['POST', 'GET'])
+@login_required
 def view_cart():
-    pass
-
+    if request.method == "POST":
+        pass
+    else:
+        try:
+            cur = cnx.cursor()
+            query_string = """SELECT products.product_id, products.prod_name, categories.kategorija, products.cost, products.size, products.image_file, products.description 
+            FROM products
+            JOIN categories ON products.categ_id = categories.categ_id
+            WHERE product_id = (
+            SELECT product_id FROM cart where user_id = %s)"""
+            cur.execute(query_string, (session["user_id"], ))
+            produkts = cur.fetchall()
+            cur.close()
+            print(produkts)
+            return render_template("view_cart.html", produkts=produkts)
+        except Exception as e:
+            flash("Database error: " + str(e), "error")
+    
+        return render_template("view_cart.html")
 
 if app.config["FLASK_ENV"] == "development":
     if __name__ == "__main__":
